@@ -1,0 +1,4 @@
+{
+    "python.pythonPath": "C:\\Users\\schwe\\AppData\\Local\\Programs\\Python\\Python37\\python.exe",
+    "python.linting.pylintArgs": ["--load-plugins", "pylint-flask", "pyling-flask-sqlalchemy"]
+}
