@@ -41,8 +41,11 @@ class Venue(db.Model):
     phone = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
-
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    website = db.Column(db.String(300))
+    seeking_talent = db.Column(db.Boolean, default = False)
+    seeking_description = db.Column(db.Text())
+    artists = db.relationship('Show', back_populates = 'venue')
 
 class Artist(db.Model):
     __tablename__ = 'Artist'
@@ -55,10 +58,23 @@ class Artist(db.Model):
     genres = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
-
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    website = db.Column(db.String(300))
+    seeking_venue = db.Column(db.Boolean, default = False)
+    seeking_description = db.Column(db.Text())
+    venues = db.relationship('Show', back_populates = 'artist')
+
 
 # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+# using the association object pattern, see: https://docs.sqlalchemy.org/en/13/orm/basic_relationships.html
+class Show(db.Model):
+   __tablename__ = 'Show'
+
+   artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), primary_key = True)
+   venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), primary_key = True)
+   start_date = db.Column(db.DateTime, nullable = False)
+   venue = db.relationship('Venue', back_populates = 'artists')
+   artist = db.relationship('Artist', back_populates = 'venues')
 
 #----------------------------------------------------------------------------#
 # Filters.
