@@ -10,9 +10,10 @@ from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 import logging
 from logging import Formatter, FileHandler
-from flask_wtf import Form
+from flask_wtf import FlaskForm
 from forms import *
 from flask_migrate import Migrate
+from sqlalchemy.exc import SQLAlchemyError
 
 #----------------------------------------------------------------------------#
 # App Config.
@@ -39,6 +40,7 @@ class Venue(db.Model):
     state = db.Column(db.String(120))
     address = db.Column(db.String(120))
     phone = db.Column(db.String(120))
+    genres = db.Column(db.String(500))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
@@ -240,12 +242,39 @@ def create_venue_form():
 def create_venue_submission():
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
-
-  # on successful db insert, flash success
-  flash('Venue ' + request.form['name'] + ' was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
-  # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+  try:
+    print(request.form)
+    req = request.form
+    seeking_talent = False
+    if len(req['seeking_description']) > 0:
+      seeking_talent = True
+    print(seeking_talent)
+    created_venue = Venue (
+      name = req['name'],
+      genres = req.getlist('genres'),
+      address = req['address'],
+      city = req['city'],
+      state = req['state'],
+      phone = req['phone'],
+      website = req['website'],
+      facebook_link = req['facebook_link'],
+      image_link = req['image_link'],
+      seeking_talent = seeking_talent,
+      seeking_description = req['seeking_description'],
+    )
+    db.session.add(created_venue)
+    db.session.commit()
+    # on successful db insert, flash success
+    flash('Artist ' + req['name'] + ' was successfully listed!')
+  except SQLAlchemyError as e:
+    print(e)
+    db.session.rollback()
+    # TODO: on unsuccessful db insert, flash an error instead.
+    # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
+    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+    flash('An error occurred. Artist ' + req['name'] + ' could not be listed.')
+  finally:
+    db.session.close()
   return render_template('pages/home.html')
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
@@ -434,11 +463,33 @@ def create_artist_submission():
   # called upon submitting the new artist listing form
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
-
-  # on successful db insert, flash success
-  flash('Artist ' + request.form['name'] + ' was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
+  try:
+    req = request.form
+    seeking_venue = False
+    if len(req['seeking_description']) > 0:
+      seeking_venue = True 
+    created_artist = Artist (
+      name = req['name'],
+      genres = req.getlist('genres'),
+      city = req['city'],
+      state = req['state'],
+      phone = req['phone'],
+      website = req['website'],
+      facebook_link = req['facebook_link'],
+      image_link = req['image_link'],
+      seeking_venue = seeking_venue,
+      seeking_description = req['seeking_description'],
+    )
+    db.session.add(created_artist)
+    db.session.commit()
+    # on successful db insert, flash success
+    flash('Artist ' + req['name'] + ' was successfully listed!')
+  except:
+    db.session.rollback()
+    # TODO: on unsuccessful db insert, flash an error instead.
+    flash('An error occurred. Artist ' + req['name'] + ' could not be listed.')
+  finally:
+    db.session.close()
   return render_template('pages/home.html')
 
 
