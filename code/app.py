@@ -139,7 +139,8 @@ def venues():
         venue_data = {}
         venue_data['id'] = venue.id
         venue_data['name'] = venue.name
-        upcoming_shows = [show.start_date for show in venue.artists if show.start_date > now]
+        upcoming_shows = [
+            show.start_date for show in venue.artists if show.start_date > now]
         venue_data['num_upcoming_shows'] = len(upcoming_shows)
         for entry in data:
             if entry['city'] == venue.city and entry['state'] == venue.state:
@@ -175,7 +176,8 @@ def search_venues():
     # seach for Hop should return "The Musical Hop".
     # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
     search_term = request.form.get('search_term', '')
-    found_venues = Venue.query.filter(Venue.name.ilike('%' + search_term + '%')).all()
+    found_venues = Venue.query.filter(
+        Venue.name.ilike('%' + search_term + '%')).all()
     response = {
         'count': len(found_venues),
         'data': []
@@ -185,7 +187,8 @@ def search_venues():
         venue_data = {}
         venue_data['id'] = venue.id
         venue_data['name'] = venue.name
-        upcoming_shows = [show.start_date for show in venue.artists if show.start_date > now]
+        upcoming_shows = [
+            show.start_date for show in venue.artists if show.start_date > now]
         venue_data['num_upcoming_shows'] = len(upcoming_shows)
         response['data'].append(venue_data)
     print(response)
@@ -233,7 +236,7 @@ def show_venue(venue_id):
         }
         if show.start_date < now:
             data['past_shows'].append(artist_info)
-        else: 
+        else:
             data['upcoming_shows'].append(artist_info)
     data['past_shows_count'] = len(data['past_shows'])
     data['upcoming_shows_count'] = len(data['upcoming_shows'])
@@ -366,7 +369,8 @@ def search_artists():
     # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
     # search for "band" should return "The Wild Sax Band".
     search_term = request.form.get('search_term', '')
-    found_artists = Artist.query.filter(Artist.name.ilike('%' + search_term + '%')).all()
+    found_artists = Artist.query.filter(
+        Artist.name.ilike('%' + search_term + '%')).all()
     response = {
         'count': len(found_artists),
         'data': []
@@ -376,7 +380,8 @@ def search_artists():
         artist_data = {}
         artist_data['id'] = artist.id
         artist_data['name'] = artist.name
-        upcoming_shows = [show.start_date for show in artist.venues if show.start_date > now]
+        upcoming_shows = [
+            show.start_date for show in artist.venues if show.start_date > now]
         artist_data['num_upcoming_shows'] = len(upcoming_shows)
         response['data'].append(artist_data)
     # response = {
@@ -422,12 +427,12 @@ def show_artist(artist_id):
         }
         if show.start_date < now:
             data['past_shows'].append(venue_info)
-        else: 
+        else:
             data['upcoming_shows'].append(venue_info)
     data['past_shows_count'] = len(data['past_shows'])
     data['upcoming_shows_count'] = len(data['upcoming_shows'])
 
-    #structure of the data to render 
+    # structure of the data to render
     # data1 = {
     #     "id": 4,
     #     "name": "Guns N Petals",
@@ -632,7 +637,8 @@ def shows():
     # displays list of shows at /shows
     # TODO: replace with real venues data.
     #       num_shows should be aggregated based on number of upcoming shows per venue.
-    shows_joined = Show.query.options(db.joinedload('artist'), db.joinedload('venue')).all()
+    shows_joined = Show.query.options(
+        db.joinedload('artist'), db.joinedload('venue')).all()
     data = []
     for entry in shows_joined:
         item = {
