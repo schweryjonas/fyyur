@@ -146,6 +146,7 @@ def venues():
             if entry['city'] == venue.city and entry['state'] == venue.state:
                 entry['venues'].append(venue_data)
 
+    # structure od the data to render
     # data = [{
     #     "city": "San Francisco",
     #     "state": "CA",
@@ -192,6 +193,8 @@ def search_venues():
         venue_data['num_upcoming_shows'] = len(upcoming_shows)
         response['data'].append(venue_data)
     print(response)
+
+    # structure of the data to render
     # response = {
     #     "count": 1,
     #     "data": [{
@@ -514,7 +517,7 @@ def edit_artist_submission(artist_id):
             db.session.rollback()
         finally:
             db.session.close()
-        return redirect(url_for('show_artist', artist_id=5))
+        return redirect(url_for('show_artist', artist_id=artist_id))
     else:
         return render_template('errors/404.html'), 404
 
@@ -574,7 +577,7 @@ def edit_venue_submission(venue_id):
             db.session.rollback()
         finally:
             db.session.close()
-        return redirect(url_for('show_venue', venue_id=3))
+        return redirect(url_for('show_venue', venue_id=venue_id))
     else:
         return render_template('errors/404.html'), 404
 
@@ -650,7 +653,8 @@ def shows():
             "start_time": str(entry.start_date)
         }
         data.append(item)
-    return render_template('pages/shows.html', shows=data)
+
+    # structure of the data to render
     # data = [{
     #     "venue_id": 1,
     #     "venue_name": "The Musical Hop",
@@ -665,28 +669,8 @@ def shows():
     #     "artist_name": "Matt Quevedo",
     #     "artist_image_link": "https://images.unsplash.com/photo-1495223153807-b916f75de8c5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=334&q=80",
     #     "start_time": "2019-06-15T23:00:00.000Z"
-    # }, {
-    #     "venue_id": 3,
-    #     "venue_name": "Park Square Live Music & Coffee",
-    #     "artist_id": 6,
-    #     "artist_name": "The Wild Sax Band",
-    #     "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-    #     "start_time": "2035-04-01T20:00:00.000Z"
-    # }, {
-    #     "venue_id": 3,
-    #     "venue_name": "Park Square Live Music & Coffee",
-    #     "artist_id": 6,
-    #     "artist_name": "The Wild Sax Band",
-    #     "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-    #     "start_time": "2035-04-08T20:00:00.000Z"
-    # }, {
-    #     "venue_id": 3,
-    #     "venue_name": "Park Square Live Music & Coffee",
-    #     "artist_id": 6,
-    #     "artist_name": "The Wild Sax Band",
-    #     "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-    #     "start_time": "2035-04-15T20:00:00.000Z"
     # }]
+    return render_template('pages/shows.html', shows=data)
 
 
 @app.route('/shows/create')
