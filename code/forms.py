@@ -4,7 +4,7 @@ from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField
 from wtforms.validators import DataRequired, AnyOf, URL, ValidationError
 from forms_choices import genres_options, state_options
 
-
+# https://wtforms.readthedocs.io/en/2.3.x/validators/
 def validate_genre_options(form, field):
     selected_genres = field.data
     for genre in selected_genres:
@@ -17,10 +17,10 @@ def validate_genre_options(form, field):
             raise ValidationError('The selected genre(s) is/are not valid!')
 
 
-def validate_date(form, field):
-    input_start_time = field.data
-    if input_start_time < datetime.today():
-        raise ValidationError('Start time has to be greater than today.')
+# def validate_date(form, field):
+#     input_start_time = field.data
+#     if input_start_time < datetime.today():
+#         raise ValidationError('Start time has to be greater than today.')
 
 
 def validate_phone(form, field):
@@ -37,7 +37,7 @@ def phone_len_valid(phone_parts):
 def phone_is_digit(phone_parts):
     return phone_parts[0].isdigit() and phone_parts[1].isdigit() and phone_parts[2].isdigit()
 
-
+# https://flask-wtf.readthedocs.io/en/stable/quickstart.html#creating-forms
 class ShowForm(Form):
 
     artist_id = StringField(

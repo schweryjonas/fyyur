@@ -14,7 +14,6 @@ from flask_wtf import FlaskForm
 from forms import *
 from flask_migrate import Migrate
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import func
 import datetime
 
 #----------------------------------------------------------------------------#
@@ -353,6 +352,8 @@ def artists():
         info['id'] = artist.id
         info['name'] = artist.name
         data.append(info)
+
+    # structure of the data to render
     # data = [{
     #     "id": 4,
     #     "name": "Guns N Petals",
