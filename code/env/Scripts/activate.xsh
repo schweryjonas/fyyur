@@ -25,7 +25,7 @@ def _deactivate(args):
 _deactivate(["nondestructive"])
 aliases["deactivate"] = _deactivate
 
-$VIRTUAL_ENV = r"C:\nano\FSND\projects\01_fyyur\starter_code\env"
+$VIRTUAL_ENV = r"C:\nano\projects\fyyur\code\env"
 
 $_OLD_VIRTUAL_PATH = $PATH
 $PATH = $PATH[:]

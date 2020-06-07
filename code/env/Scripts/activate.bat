@@ -1,5 +1,5 @@
 @echo off
-set "VIRTUAL_ENV=C:\nano\FSND\projects\01_fyyur\starter_code\env"
+set "VIRTUAL_ENV=C:\nano\projects\fyyur\code\env"
 
 if defined _OLD_VIRTUAL_PROMPT (
     set "PROMPT=%_OLD_VIRTUAL_PROMPT%"
