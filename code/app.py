@@ -14,73 +14,23 @@ from flask_wtf import FlaskForm
 from forms import *
 from flask_migrate import Migrate
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import text
 import datetime
+from models import connect, Show, Artist, Venue
 
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
-
 app = Flask(__name__)
 moment = Moment(app)
-app.config.from_object('config')
-db = SQLAlchemy(app)
+db = connect(app)
 
-# TODO: connect to a local postgresql database
-migrate = Migrate(app, db)
-
-#----------------------------------------------------------------------------#
-# Models.
-#----------------------------------------------------------------------------#
-
-
-class Venue(db.Model):
-    __tablename__ = 'Venue'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    genres = db.Column(db.String(500))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
-    website = db.Column(db.String(300))
-    seeking_talent = db.Column(db.Boolean, default=False)
-    seeking_description = db.Column(db.Text())
-    artists = db.relationship('Show', back_populates='venue')
-
-
-class Artist(db.Model):
-    __tablename__ = 'Artist'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
-    website = db.Column(db.String(300))
-    seeking_venue = db.Column(db.Boolean, default=False)
-    seeking_description = db.Column(db.Text())
-    venues = db.relationship('Show', back_populates='artist')
-
-
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
-# using the association object pattern, see: https://docs.sqlalchemy.org/en/13/orm/basic_relationships.html
-class Show(db.Model):
-    __tablename__ = 'Show'
-
-    id = db.Column(db.Integer, primary_key=True)
-    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'))
-    venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'))
-    start_date = db.Column(db.DateTime, nullable=False)
-    venue = db.relationship('Venue', back_populates='artists')
-    artist = db.relationship('Artist', back_populates='venues')
+# implement suggestion from reviewer:
+# moved to models.py
+# app.config.from_object('config')
+# db = SQLAlchemy(app)
+# # # TODO: connect to a local postgresql database
+# migrate = Migrate(app, db)
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -176,8 +126,20 @@ def search_venues():
     # seach for Hop should return "The Musical Hop".
     # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
     search_term = request.form.get('search_term', '')
-    found_venues = Venue.query.filter(
-        Venue.name.ilike('%' + search_term + '%')).all()
+    # OLD: from first submission
+    # found_venues = Venue.query.filter(
+    #     Venue.name.ilike('%' + search_term + '%')).all()
+
+    # NEW: Since the rubric asks for Raw SQL
+    query = text(
+        f'''
+        SELECT "Venue".id, "Venue".name, array_agg("Show".start_date) FROM "Venue"
+        LEFT JOIN "Show" on "Venue".id = "Show".venue_id
+        WHERE LOWER("Venue".name) LIKE LOWER('%{search_term}%')
+        GROUP BY "Venue".id, "Venue".name
+        '''
+    )
+    found_venues = db.engine.execute(query).fetchall()
     response = {
         'count': len(found_venues),
         'data': []
@@ -185,13 +147,12 @@ def search_venues():
     now = datetime.datetime.now()
     for venue in found_venues:
         venue_data = {}
-        venue_data['id'] = venue.id
-        venue_data['name'] = venue.name
-        upcoming_shows = [
-            show.start_date for show in venue.artists if show.start_date > now]
+        venue_data['id'] = venue[0]
+        venue_data['name'] = venue[1]
+        # upcoming_shows = [show.start_date for show in venue.artists if show.start_date > now]
+        upcoming_shows = [date for date in venue[2] if date > now]
         venue_data['num_upcoming_shows'] = len(upcoming_shows)
         response['data'].append(venue_data)
-    print(response)
 
     # structure of the data to render
     # response = {
@@ -373,8 +334,21 @@ def search_artists():
     # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
     # search for "band" should return "The Wild Sax Band".
     search_term = request.form.get('search_term', '')
-    found_artists = Artist.query.filter(
-        Artist.name.ilike('%' + search_term + '%')).all()
+    # OLD: from First submission
+    # found_artists = Artist.query.filter(
+    #     Artist.name.ilike('%' + search_term + '%')).all()
+
+    # NEW: Since the rubric asks for Raw SQL
+    query = text(
+        f'''
+        SELECT "Artist".id, "Artist".name, array_agg("Show".start_date) FROM "Artist"
+        LEFT JOIN "Show" on "Artist".id = "Show".artist_id
+        WHERE LOWER("Artist".name) LIKE LOWER('%{search_term}%')
+        GROUP BY "Artist".id, "Artist".name
+        '''
+    )
+    print(query)
+    found_artists = db.engine.execute(query).fetchall()
     response = {
         'count': len(found_artists),
         'data': []
@@ -382,12 +356,15 @@ def search_artists():
     now = datetime.datetime.now()
     for artist in found_artists:
         artist_data = {}
-        artist_data['id'] = artist.id
-        artist_data['name'] = artist.name
-        upcoming_shows = [
-            show.start_date for show in artist.venues if show.start_date > now]
+        artist_data['id'] = artist[0]
+        artist_data['name'] = artist[1]
+        # OLD: upcoming_shows = [show.start_date for show in artist.venues if show.start_date > now]
+        # NEW: below --> changed the way to compute upcoming shows
+        upcoming_shows = [date for date in artist[2] if date > now]
         artist_data['num_upcoming_shows'] = len(upcoming_shows)
         response['data'].append(artist_data)
+
+    # structure of the data to render
     # response = {
     #     "count": 1,
     #     "data": [{
@@ -404,63 +381,65 @@ def show_artist(artist_id):
     # shows the venue page with the given venue_id
     # TODO: replace with real venue data from the venues table, using venue_id
     artist = Artist.query.get(artist_id)
-    data = {
-        'id': artist.id,
-        'name': artist.name,
-        'genres': parse_genres(artist.genres),
-        'city': artist.city,
-        'state': artist.state,
-        'phone': artist.phone,
-        'website': artist.website,
-        'facebook_link': artist.website,
-        'seeking_venue': artist.seeking_venue,
-        'seeking_description': artist.seeking_description,
-        'image_link': artist.image_link,
-        'past_shows': [],
-        'upcoming_shows': [],
-        'past_shows_count': 0,
-        'upcoming_shows_count': 0
-    }
-    now = datetime.datetime.now()
-    for show in artist.venues:
-        venue_info = {
-            'venue_id': show.venue.id,
-            'venue_name': show.venue.name,
-            'venue_image_link': show.venue.image_link,
-            'start_time': str(show.start_date)
+    if artist:
+        data = {
+            'id': artist.id,
+            'name': artist.name,
+            'genres': parse_genres(artist.genres),
+            'city': artist.city,
+            'state': artist.state,
+            'phone': artist.phone,
+            'website': artist.website,
+            'facebook_link': artist.website,
+            'seeking_venue': artist.seeking_venue,
+            'seeking_description': artist.seeking_description,
+            'image_link': artist.image_link,
+            'past_shows': [],
+            'upcoming_shows': [],
+            'past_shows_count': 0,
+            'upcoming_shows_count': 0
         }
-        if show.start_date < now:
-            data['past_shows'].append(venue_info)
-        else:
-            data['upcoming_shows'].append(venue_info)
-    data['past_shows_count'] = len(data['past_shows'])
-    data['upcoming_shows_count'] = len(data['upcoming_shows'])
+        now = datetime.datetime.now()
+        for show in artist.venues:
+            venue_info = {
+                'venue_id': show.venue.id,
+                'venue_name': show.venue.name,
+                'venue_image_link': show.venue.image_link,
+                'start_time': str(show.start_date)
+            }
+            if show.start_date < now:
+                data['past_shows'].append(venue_info)
+            else:
+                data['upcoming_shows'].append(venue_info)
+        data['past_shows_count'] = len(data['past_shows'])
+        data['upcoming_shows_count'] = len(data['upcoming_shows'])
 
-    # structure of the data to render
-    # data1 = {
-    #     "id": 4,
-    #     "name": "Guns N Petals",
-    #     "genres": ["Rock n Roll"],
-    #     "city": "San Francisco",
-    #     "state": "CA",
-    #     "phone": "326-123-5000",
-    #     "website": "https://www.gunsnpetalsband.com",
-    #     "facebook_link": "https://www.facebook.com/GunsNPetals",
-    #     "seeking_venue": True,
-    #     "seeking_description": "Looking for shows to perform at in the San Francisco Bay Area!",
-    #     "image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
-    #     "past_shows": [{
-    #         "venue_id": 1,
-    #         "venue_name": "The Musical Hop",
-    #         "venue_image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60",
-    #         "start_time": "2019-05-21T21:30:00.000Z"
-    #     }],
-    #     "upcoming_shows": [],
-    #     "past_shows_count": 1,
-    #     "upcoming_shows_count": 0,
-    # }
-    return render_template('pages/show_artist.html', artist=data)
-
+        # structure of the data to render
+        # data1 = {
+        #     "id": 4,
+        #     "name": "Guns N Petals",
+        #     "genres": ["Rock n Roll"],
+        #     "city": "San Francisco",
+        #     "state": "CA",
+        #     "phone": "326-123-5000",
+        #     "website": "https://www.gunsnpetalsband.com",
+        #     "facebook_link": "https://www.facebook.com/GunsNPetals",
+        #     "seeking_venue": True,
+        #     "seeking_description": "Looking for shows to perform at in the San Francisco Bay Area!",
+        #     "image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
+        #     "past_shows": [{
+        #         "venue_id": 1,
+        #         "venue_name": "The Musical Hop",
+        #         "venue_image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60",
+        #         "start_time": "2019-05-21T21:30:00.000Z"
+        #     }],
+        #     "upcoming_shows": [],
+        #     "past_shows_count": 1,
+        #     "upcoming_shows_count": 0,
+        # }
+        return render_template('pages/show_artist.html', artist=data)
+    else:
+        return render_template('errors/404.html'), 404
 #  Update
 #  ----------------------------------------------------------------
 

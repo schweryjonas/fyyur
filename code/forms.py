@@ -107,9 +107,6 @@ class ArtistForm(Form):
         # TODO implement validation logic for phone
         'phone', validators=[DataRequired(), validate_phone]
     )
-    image_link = StringField(
-        'image_link'
-    )
     genres = SelectMultipleField(
         # TODO implement enum restriction
         'genres', validators=[DataRequired(), validate_genre_options], choices=genres_options
